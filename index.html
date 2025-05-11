@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lügenrunde</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Lügenrunde</h1>
+
+  <div id="theme-toggle">
+    <label>
+      <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()" />
+      🌙 Dark Mode
+    </label>
+  </div>
+
+  <div id="setup">
+    <label>Spieler hinzufügen:</label>
+    <input type="text" id="playerInput" placeholder="z.B. Tom" />
+    <button onclick="addPlayer()">Hinzufügen</button>
+    <ul id="playerList"></ul>
+
+    <label>Anzahl Verräter:</label><br />
+    <input type="number" id="imposterCount" min="1" value="1" /><br /><br />
+
+    <label>Begriffe (je ein Begriff pro Zeile):</label><br />
+    <textarea id="termsInput" rows="5" placeholder="z.B. Messi&#10;Ronaldo&#10;Mbappé"></textarea><br /><br />
+
+    <button onclick="startGame()">Spiel starten</button>
+  </div>
+
+  <div id="category-controls">
+    <label>Kategorie speichern als:</label>
+    <input type="text" id="categoryName" placeholder="z.B. Fußballer" />
+    <button onclick="saveCategory()">Speichern</button>
+
+    <label>Gespeicherte Kategorien laden:</label>
+    <select id="categorySelect" onchange="loadCategory()">
+      <option value="">-- Kategorie wählen --</option>
+    </select>
+    <button onclick="deleteCategory()">Kategorie löschen</button>
+
+    <label>Mehrere Kategorien kombinieren:</label>
+    <div id="category-mix-list"></div>
+    <button onclick="loadMixedCategories()">Kombination laden</button>
+    <button onclick="saveMixedCategories()">Diese Kombination speichern</button>
+  </div>
+
+  <div id="result-screen" style="display: none;">
+    <h2>Wer hat gewonnen?</h2>
+    <button onclick="recordResult('imposter')">Imposter</button>
+    <button onclick="recordResult('team')">Team</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
