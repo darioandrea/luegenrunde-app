@@ -153,3 +153,24 @@ window.onload = () => {
   updateCategoryList();
   loadTheme();
 };
+function saveCategory() {
+  const name = document.getElementById('categoryName').value.trim();
+  const terms = document.getElementById('termsInput').value
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t !== '');
+
+  if (!name) {
+    alert('Bitte einen Kategorienamen eingeben.');
+    return;
+  }
+
+  if (terms.length === 0) {
+    alert('Keine Begriffe zum Speichern.');
+    return;
+  }
+
+  localStorage.setItem('category_' + name, JSON.stringify(terms));
+  alert('Kategorie gespeichert!');
+  updateCategoryList();
+}
