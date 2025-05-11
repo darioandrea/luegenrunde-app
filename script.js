@@ -35,11 +35,11 @@ function startGame() {
   const imposterCount = parseInt(document.getElementById('imposterCount').value);
   const terms = document.getElementById('termsInput').value
     .split('\n')
-    .map(term => term.trim())
-    .filter(term => term !== '');
+    .map(t => t.trim())
+    .filter(t => t);
 
   if (players.length < 2 || imposterCount >= players.length || terms.length === 0) {
-    alert('Bitte gültige Eingaben machen!');
+    alert('Ungültige Eingaben');
     return;
   }
 
@@ -67,7 +67,7 @@ function startGame() {
   });
 
   assignments = players.map(name => ({
-    name: name,
+    name,
     role: imposters.includes(name) ? 'Imposter' : randomTerm
   }));
 
@@ -79,14 +79,14 @@ function startGame() {
 function showNextPlayer() {
   const container = document.getElementById('setup');
   if (currentPlayerIndex >= assignments.length) {
-    document.getElementById('setup').style.display = 'none';
+    container.style.display = 'none';
     document.getElementById('result-screen').style.display = 'block';
     return;
   }
 
   const current = assignments[currentPlayerIndex];
   container.innerHTML = `
-    <div class="slide-in">
+    <div>
       <h2>${current.name} ist dran</h2>
       <button onclick="revealTerm()">Begriff anzeigen</button>
     </div>
@@ -95,9 +95,8 @@ function showNextPlayer() {
 
 function revealTerm() {
   const current = assignments[currentPlayerIndex];
-  const container = document.getElementById('setup');
   const roleClass = current.role === 'Imposter' ? 'reveal-imposter' : 'reveal-regular';
-  container.innerHTML = `
+  document.getElementById('setup').innerHTML = `
     <div class="${roleClass}">
       <h2>${current.name}</h2>
       <p><strong>${current.role}</strong></p>
@@ -114,28 +113,112 @@ function next() {
 function recordResult(winner) {
   assignments.forEach(player => {
     const key = 'player_' + player.name;
-    const data = JSON.parse(localStorage.getItem(key)) || {
-      games: 0,
-      imposters: 0,
-      winsAsImposter: 0,
-      winsAsTeam: 0
-    };
-
-    if (winner === 'imposter' && player.role === 'Imposter') {
-      data.winsAsImposter += 1;
-    }
-    if (winner === 'team' && player.role !== 'Imposter') {
-      data.winsAsTeam += 1;
-    }
-
+    const data = JSON.parse(localStorage.getItem(key));
+    if (winner === 'imposter' && player.role === 'Imposter') data.winsAsImposter += 1;
+    if (winner === 'team' && player.role !== 'Imposter') data.winsAsTeam += 1;
     localStorage.setItem(key, JSON.stringify(data));
   });
-
   location.reload();
 }
 
-// Kategorien-Funktionen unverändert (saveCategory, loadCategory, etc.)
-// Fügt deinen vorhandenen Mix-Modus & Kategorie-Code ein...
+function saveCategory() {
+  const name = document.getElementById('categoryName').value.trim();
+  const terms = document.getElementById('termsInput').value
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t !== '');
+  if (!name || terms.length === 0) {
+    alert('Ungültige Eingaben');
+    return;
+  }
+  localStorage.setItem('category_' + name, JSON.stringify(terms));
+  updateCategoryList();
+}
+
+function loadCategory() {
+  const select = document.getElementById('categorySelect');
+  const selectedName = select.value;
+  if (!selectedName) return;
+
+  const raw = localStorage.getItem('category_' + selectedName);
+  if (!raw) {
+    alert('Kategorie nicht gefunden.');
+    return;
+  }
+
+  try {
+    const terms = JSON.parse(raw);
+    if (Array.isArray(terms)) {
+      document.getElementById('termsInput').value = terms.join('\n');
+    } else {
+      alert('Ungültiges Datenformat.');
+    }
+  } catch (e) {
+    alert('Fehler beim Laden der Kategorie.');
+    console.error(e);
+  }
+}
+
+
+function deleteCategory() {
+  const name = document.getElementById('categorySelect').value;
+  if (!name) return;
+  if (confirm(`Kategorie "${name}" wirklich löschen?`)) {
+    localStorage.removeItem('category_' + name);
+    updateCategoryList();
+  }
+}
+
+function updateCategoryList() {
+  const select = document.getElementById('categorySelect');
+  const mixContainer = document.getElementById('category-mix-list');
+  select.innerHTML = '<option value="">-- Kategorie wählen --</option>';
+  mixContainer.innerHTML = '';
+  for (let key in localStorage) {
+    if (key.startsWith('category_')) {
+      const name = key.replace('category_', '');
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = 'mix_' + name;
+      checkbox.value = name;
+      const label = document.createElement('label');
+      label.htmlFor = 'mix_' + name;
+      label.textContent = name;
+      const div = document.createElement('div');
+      div.appendChild(checkbox);
+      div.appendChild(label);
+      mixContainer.appendChild(div);
+    }
+  }
+}
+
+function loadMixedCategories() {
+  const selected = Array.from(document.querySelectorAll('#category-mix-list input:checked'))
+    .map(cb => cb.value);
+  let combined = [];
+  selected.forEach(name => {
+    const terms = JSON.parse(localStorage.getItem('category_' + name));
+    combined = combined.concat(terms);
+  });
+  document.getElementById('termsInput').value = combined.join('\n');
+}
+
+function saveMixedCategories() {
+  const name = prompt('Namen für die neue Kombination eingeben:');
+  if (!name) return;
+  const terms = document.getElementById('termsInput').value
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t);
+  if (terms.length > 0) {
+    localStorage.setItem('category_' + name, JSON.stringify(terms));
+    updateCategoryList();
+  }
+}
 
 function toggleTheme() {
   const isDark = document.getElementById('darkModeToggle').checked;
@@ -153,24 +236,3 @@ window.onload = () => {
   updateCategoryList();
   loadTheme();
 };
-function saveCategory() {
-  const name = document.getElementById('categoryName').value.trim();
-  const terms = document.getElementById('termsInput').value
-    .split('\n')
-    .map(t => t.trim())
-    .filter(t => t !== '');
-
-  if (!name) {
-    alert('Bitte einen Kategorienamen eingeben.');
-    return;
-  }
-
-  if (terms.length === 0) {
-    alert('Keine Begriffe zum Speichern.');
-    return;
-  }
-
-  localStorage.setItem('category_' + name, JSON.stringify(terms));
-  alert('Kategorie gespeichert!');
-  updateCategoryList();
-}
